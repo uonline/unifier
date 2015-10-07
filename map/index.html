@@ -1,187 +1,227 @@
-<meta charset="utf-8">
-<canvas id="canvas" style="outline:1px solid" width=512 height=512></canvas>
-auto <input id="automator" type="checkbox">
-<div style="display:none">
-	<!-- конфиг будет тут -->
-	<input name="name" type="text"><br>
-	<input name="label" type="text"><br>
-	<textarea></textarea>
-	<input type="button" value="OK"><br>
-</div>
+<!DOCTYPE html>
+<html ng-app>
+	<head>
+		<meta charset="utf-8" />
+		<title>Картограф &mdash; uonline/unifier</title>
+		<script>
+			window.onbeforeunload = function(){ return 'Are you sure?' }
+		</script>
+		<!-- bootstrap -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+		<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+	</head>
+	<body>
+		<nav class="navbar navbar-default navbar-static-top">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+						<span class="sr-only">Переключить навигацию</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="/">uonline/unifier</a>
+				</div>
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav">
+						<li><a href="/">Торговец</a></li>
+						<li class="active"><a href="map/">Картограф <span class="sr-only">(вы здесь)</span></a></li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12">
+					<div>Магия <input id="automator" type="checkbox"></div>
+					<canvas id="canvas" style="outline:1px solid #ddd" width=800 height=500></canvas>
+					<div style="display:none">
+						<!-- конфиг будет тут -->
+						<input name="name" type="text"><br>
+						<input name="label" type="text"><br>
+						<textarea></textarea>
+						<input type="button" value="OK"><br>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script src="data.js"></script>
+		<script src="control_single.js"></script>
+		<script type="application/javascript; version=1.8">
+			"use strict"
+			var IamFF = true
 
-<script src="data.js"></script>
-<script src="control_single.js"></script>
-<script type="application/javascript; version=1.8">
-"use strict"
-var IamFF = true
+			let locById = {}
+			let locByLabel = {}
+			for (let area of areas)
+				for (let loc of area.locations) {
+					locById[loc.id] = loc
+					locByLabel[loc.label] = loc
+				}
 
-let locById = {}
-let locByLabel = {}
-for (let area of areas)
-	for (let loc of area.locations) {
-		locById[loc.id] = loc
-		locByLabel[loc.label] = loc
-	}
+			let nodes = []
+			let nodeById = {}
+			for (let area of areas)
+				for (let loc of area.locations) {
+					let a = Math.random()*2*Math.PI
+					let r = 192
+					let node = {
+						id: loc.id,
+						loc: loc,
+						x: r * Math.cos(a) + canvas.width/2,
+						y: r * Math.sin(a) + canvas.height/2,
+						nei: []
+					}
+					nodes.push(node)
+					nodeById[loc.id] = node
+				}
 
-let nodes = []
-let nodeById = {}
-for (let area of areas)
-	for (let loc of area.locations) {
-		let a = Math.random()*2*Math.PI
-		let r = 192
-		let node = {
-			id: loc.id,
-			loc: loc,
-			x: r * Math.cos(a) + canvas.width/2,
-			y: r * Math.sin(a) + canvas.height/2,
-			nei: []
-		}
-		nodes.push(node)
-		nodeById[loc.id] = node
-	}
+			let edges = []
+			let edgeByNodeId = {}
+			for (let node of nodes) {
+				for (let label in node.loc.actions) {
+					let loc = locByLabel[label]
+					if (node.loc.id in edgeByNodeId && loc.id in edgeByNodeId) continue
+					edges.push({
+						n1: node,
+						n2: nodeById[loc.id]
+					})
+				}
+			}
 
-let edges = []
-let edgeByNodeId = {}
-for (let node of nodes) {
-	for (let label in node.loc.actions) {
-		let loc = locByLabel[label]
-		if (node.loc.id in edgeByNodeId && loc.id in edgeByNodeId) continue
-		edges.push({
-			n1: node,
-			n2: nodeById[loc.id]
-		})
-	}
-}
+			let last_x = NaN, last_y = NaN
+			let grab_x = NaN, grab_y = NaN
+			let hoverNode = null
+			let selectedNode = null
 
-let last_x = NaN, last_y = NaN
-let grab_x = NaN, grab_y = NaN
-let hoverNode = null
-let selectedNode = null
+			function draw(rc) {
+				rc.save()
+				rc.clearRect(0, 0, rc.canvas.width, rc.canvas.height)
+				//rc.translate(rc.canvas.width/2, rc.canvas.height/2)
+				for (let node of nodes) {
+					if (hoverNode == node) {
+						rc.fillStyle = 'blue'
+						rc.fillRect(node.x-3, node.y-3, 5, 5)
+					}
+					if (selectedNode == node) {
+						rc.fillStyle = 'black'
+						rc.fillRect(node.x-3, node.y-3, 5, 5)
+					}
+					rc.fillStyle = 'black'
+					rc.strokeRect(node.x-3, node.y-3, 5, 5)
+					rc.fillText(node.loc.name, node.x, node.y)
+				}
+				rc.beginPath()
+				for (let edge of edges) {
+					rc.moveTo(edge.n1.x, edge.n1.y)
+					rc.lineTo(edge.n2.x, edge.n2.y)
+				}
+				rc.stroke()
+				rc.restore()
+				if (automator.checked) auto()
+			}
+			let animation_frame_requested = false
+			function onAnimFrame() {
+				animation_frame_requested = false
+				draw(rc)
+			}
+			function requestRedraw() {
+				if (animation_frame_requested) return
+				requestAnimationFrame(onAnimFrame, canvas)
+				animation_frame_requested = true
+			}
 
-function draw(rc) {
-	rc.save()
-	rc.clearRect(0, 0, rc.canvas.width, rc.canvas.height)
-	//rc.translate(rc.canvas.width/2, rc.canvas.height/2)
-	for (let node of nodes) {
-		if (hoverNode == node) {
-			rc.fillStyle = 'blue'
-			rc.fillRect(node.x-3, node.y-3, 5, 5)
-		}
-		if (selectedNode == node) {
-			rc.fillStyle = 'black'
-			rc.fillRect(node.x-3, node.y-3, 5, 5)
-		}
-		rc.fillStyle = 'black'
-		rc.strokeRect(node.x-3, node.y-3, 5, 5)
-		rc.fillText(node.loc.name, node.x, node.y)
-	}
-	rc.beginPath()
-	for (let edge of edges) {
-		rc.moveTo(edge.n1.x, edge.n1.y)
-		rc.lineTo(edge.n2.x, edge.n2.y)
-	}
-	rc.stroke()
-	rc.restore()
-	if (automator.checked) auto()
-}
-let animation_frame_requested = false
-function onAnimFrame() {
-	animation_frame_requested = false
-	draw(rc)
-}
-function requestRedraw() {
-	if (animation_frame_requested) return
-	requestAnimationFrame(onAnimFrame, canvas)
-	animation_frame_requested = true
-}
+			function pointDis(x1,y1, x2,y2) {
+				return Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2))
+			}
+			function nodeDis(n1,n2) {
+				return pointDis(n1.x,n1.y, n2.x,n2.y)
+			}
 
-function pointDis(x1,y1, x2,y2) {
-	return Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2))
-}
-function nodeDis(n1,n2) {
-	return pointDis(n1.x,n1.y, n2.x,n2.y)
-}
+			function updateHoverNode(x,y) {
+				hoverNode = null
+				for (let node of nodes) {
+					if (pointDis(x, y, node.x, node.y) < 5) {
+						hoverNode = node
+						break
+					}
+				}
+			}
 
-function updateHoverNode(x,y) {
-	hoverNode = null
-	for (let node of nodes) {
-		if (pointDis(x, y, node.x, node.y) < 5) {
-			hoverNode = node
-			break
-		}
-	}
-}
+			function down(x,y) {
+				updateHoverNode(x,y)
+				if (hoverNode) {
+					selectedNode = hoverNode
+					grab_x = x-hoverNode.x
+					grab_y = y-hoverNode.y
+				}
+				last_x=x; last_y=y
+				requestRedraw()
+				return true
+			}
 
-function down(x,y) {
-	updateHoverNode(x,y)
-	if (hoverNode) {
-		selectedNode = hoverNode
-		grab_x = x-hoverNode.x
-		grab_y = y-hoverNode.y
-	}
-	last_x=x; last_y=y
-	requestRedraw()
-	return true
-}
+			function move(x,y) {
+				if (selectedNode) {
+					selectedNode.x = x-grab_x
+					selectedNode.y = y-grab_y
+				} else {
+					updateHoverNode(x,y)
+				}
+				last_x=x; last_y=y
+				requestRedraw()
+				return true
+			}
 
-function move(x,y) {
-	if (selectedNode) {
-		selectedNode.x = x-grab_x
-		selectedNode.y = y-grab_y
-	} else {
-		updateHoverNode(x,y)
-	}
-	last_x=x; last_y=y
-	requestRedraw()
-	return true
-}
+			function up() {
+				selectedNode = null
+				requestRedraw()
+				return true
+			}
 
-function up() {
-	selectedNode = null
-	requestRedraw()
-	return true
-}
+			control.single({
+				startElem: canvas,
+				stopElem: document.body,
+				down: down,
+				move: move,
+				up: up
+			})
 
-control.single({
-	startElem: canvas,
-	stopElem: document.body,
-	down: down,
-	move: move,
-	up: up
-})
+			function auto() {
+				for (let edge of edges) {
+					let n1 = edge.n1
+					let n2 = edge.n2
+					let dis = nodeDis(n1, n2)
+					let k = 1/10
+					let dx = (n2.x - n1.x) * k
+					let dy = (n2.y - n1.y) * k
+					n1.x += dx; n1.y += dy
+					n2.x -= dx; n2.y -= dy
+				}
+				for (let i=0; i<nodes.length; i++) {
+					for (let j=i+1; j<nodes.length; j++) {
+						let n1 = nodes[i]
+						let n2 = nodes[j]
+						let dis = nodeDis(n1, n2)
+						let k = -1/dis/dis*100
+						let dx = (n2.x - n1.x) * k
+						let dy = (n2.y - n1.y) * k
+						n1.x += dx; n1.y += dy
+						n2.x -= dx; n2.y -= dy
+					}
+				}
+				requestRedraw()
+			}
 
-function auto() {
-	for (let edge of edges) {
-		let n1 = edge.n1
-		let n2 = edge.n2
-		let dis = nodeDis(n1, n2)
-		let k = 1/10
-		let dx = (n2.x - n1.x) * k
-		let dy = (n2.y - n1.y) * k
-		n1.x += dx; n1.y += dy
-		n2.x -= dx; n2.y -= dy
-	}
-	for (let i=0; i<nodes.length; i++) {
-		for (let j=i+1; j<nodes.length; j++) {
-			let n1 = nodes[i]
-			let n2 = nodes[j]
-			let dis = nodeDis(n1, n2)
-			let k = -1/dis/dis*100
-			let dx = (n2.x - n1.x) * k
-			let dy = (n2.y - n1.y) * k
-			n1.x += dx; n1.y += dy
-			n2.x -= dx; n2.y -= dy
-		}
-	}
-	requestRedraw()
-}
+			let rc = canvas.getContext('2d')
+			requestRedraw()
+			</script>
 
-let rc = canvas.getContext('2d')
-requestRedraw()
-</script>
-
-<script>
-// костыль.webp
-window.IamFF || Array.prototype.forEach.call(document.querySelectorAll('script[type="application/javascript; version=1.8"]'), e => (e.type="", document.body.appendChild(e)))
-// зато в одну строчку!
-</script>
+			<script>
+			// костыль.webp
+			window.IamFF || Array.prototype.forEach.call(document.querySelectorAll('script[type="application/javascript; version=1.8"]'), e => (e.type="", document.body.appendChild(e)))
+			// зато в одну строчку!
+			</script>
+	</body>
+</html>
