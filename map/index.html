@@ -10,6 +10,7 @@
 		<!-- bootstrap -->
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+		<link rel="stylesheet" href="main.css">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 	</head>
 	<body>
@@ -32,19 +33,16 @@
 				</div>
 			</div>
 		</nav>
-		<div class="container">
-			<div class="row">
-				<div class="col-md-12">
-					<div>Магия <input id="automator" type="checkbox"></div>
-					<canvas id="canvas" style="outline:1px solid #ddd" width=800 height=500></canvas>
-					<div style="display:none">
-						<!-- конфиг будет тут -->
-						<input name="name" type="text"><br>
-						<input name="label" type="text"><br>
-						<textarea></textarea>
-						<input type="button" value="OK"><br>
-					</div>
-				</div>
+		<div class="main-wrap">
+			<div class="canvas-wrap">
+				<div class="magic-wrap">Магия <input id="automator" type="checkbox"></div>
+				<canvas id="canvas" width=800 height=500></canvas>
+			</div>
+			<div class="node-cfg-wrap" data-mode="hidden">
+				<input name="name" type="text">
+				<input name="label" type="text">
+				<textarea name="description"></textarea>
+				<input type="button" value="OK" class="submit-btn">
 			</div>
 		</div>
 		<script src="data.js"></script>

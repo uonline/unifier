@@ -44,14 +44,16 @@ for (let node of nodes) {
 
 let last_x = NaN, last_y = NaN
 let grab_x = NaN, grab_y = NaN
+let moved_path_len = 0
+let last_press_at = 0
 let hoverNode = null
+let pressedNode = null
 let selectedNode = null
 let NODE_R = 5
 
 function draw(rc) {
 	rc.save()
 	rc.clearRect(0, 0, rc.canvas.width, rc.canvas.height)
-	//rc.translate(rc.canvas.width/2, rc.canvas.height/2)
 	for (let node of nodes) {
 		rc.beginPath()
 		rc.arc(node.x, node.y, NODE_R, 0, Math.PI*2)
@@ -86,6 +88,30 @@ function requestRedraw() {
 	animation_frame_requested = true
 }
 
+function resize() {
+	let s = devicePixelRatio
+	canvas.width = canvas.offsetWidth * s
+	canvas.height = canvas.offsetHeight * s
+	requestRedraw()
+}
+
+function fillNodeInfo(node, mode) {
+	let elem = $('.node-cfg-wrap')
+	elem.dataset.mode = mode
+	elem.$('[name="name"]').value = node.loc.name
+	elem.$('[name="label"]').value = node.loc.label
+	elem.$('[name="description"]').value = node.loc.description
+}
+function hideNodeInfo() {
+	$('.node-cfg-wrap').dataset.mode = "hidden"
+}
+$('.node-cfg-wrap .submit-btn').onclick = function() {
+	if (!selectedNode) throw new Error('no node is selected') //this must be impossible
+	let loc = selectedNode.loc
+	$$('.node-cfg-wrap [name]').forEach(e => loc[e.name] = e.value)
+}
+
+
 function pointDis(x1,y1, x2,y2) {
 	return Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2))
 }
@@ -106,29 +132,49 @@ function updateHoverNode(x,y) {
 function down(x,y) {
 	updateHoverNode(x,y)
 	if (hoverNode) {
-		selectedNode = hoverNode
 		grab_x = x-hoverNode.x
 		grab_y = y-hoverNode.y
+		pressedNode = hoverNode
 	}
+	moved_path_len = 0
+	last_press_at = Date.now()
 	last_x=x; last_y=y
 	requestRedraw()
 	return true
 }
 
 function move(x,y) {
-	if (selectedNode) {
-		selectedNode.x = x-grab_x
-		selectedNode.y = y-grab_y
+	if (hoverNode && grab_x==grab_x) {
+		hoverNode.x = x-grab_x
+		hoverNode.y = y-grab_y
 	} else {
 		updateHoverNode(x,y)
+		if (!selectedNode) {
+			if (hoverNode) {
+				fillNodeInfo(hoverNode, "preview")
+			} else {
+				hideNodeInfo()
+			}
+		}
 	}
+	moved_path_len += pointDis(x, y, last_x, last_y)
 	last_x=x; last_y=y
 	requestRedraw()
 	return true
 }
 
 function up() {
-	selectedNode = null
+	let it_was_click = (moved_path_len < 5) && (Date.now()-last_press_at < 500)
+	if (it_was_click) {
+		selectedNode = pressedNode
+		if (selectedNode) {
+			fillNodeInfo(hoverNode, "edit")
+		} else {
+			hideNodeInfo()
+		}
+	}
+	pressedNode = null
+	grab_x = grab_y = NaN
 	requestRedraw()
 	return true
 }
@@ -168,4 +214,8 @@ function auto() {
 }
 
 let rc = canvas.getContext('2d')
-requestRedraw()
+window.onresize = function() {
+	resize()
+	setTimeout(resize, 100) //мало того, что оно пикселы округляет не туда, дак ещё и ресайз теперь кривой
+}
+window.onresize()
