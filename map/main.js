@@ -2,6 +2,8 @@
 
 let rc = canvas.getContext('2d')
 let animation_frame_requested = false
+let shift_x = 0, shift_y = 0
+let zoom = 1
 
 let last_x = NaN, last_y = NaN
 let grab_x = NaN, grab_y = NaN
@@ -107,6 +109,8 @@ function initGraph(areas) {
 function draw(rc) {
 	rc.save()
 	rc.clearRect(0, 0, rc.canvas.width, rc.canvas.height)
+	rc.translate(shift_x, shift_y)
+	
 	for (let node of nodes) {
 		rc.beginPath()
 		rc.arc(node.x, node.y, NODE_R, 0, Math.PI*2)
@@ -125,12 +129,14 @@ function draw(rc) {
 		rc.stroke()
 		rc.fillText(node.loc.name, node.x, node.y)
 	}
+	
 	rc.beginPath()
 	for (let edge of edges) {
 		rc.moveTo(edge.n1.x, edge.n1.y)
 		rc.lineTo(edge.n2.x, edge.n2.y)
 	}
 	rc.stroke()
+	
 	rc.restore()
 	if (automator.checked) auto()
 }
@@ -171,11 +177,14 @@ function updateHoverNode(x,y) {
 
 // Обработчики мышиного (и трогательного тоже) ввода.
 function down(x,y) {
-	updateHoverNode(x,y)
+	updateHoverNode(x-shift_x, y-shift_y)
 	if (hoverNode) { //нажали на ноду
 		grab_x = x-hoverNode.x
 		grab_y = y-hoverNode.y
 		pressedNode = hoverNode
+	} else { //нажали мимо ноды
+		grab_x = x
+		grab_y = y
 	}
 	moved_path_len = 0
 	last_press_at = Date.now()
@@ -184,12 +193,14 @@ function down(x,y) {
 	return true
 }
 function move(x,y) {
-	// если есть, что перетаскивать, ...
-	if (hoverNode && grab_x==grab_x) {
+	if (hoverNode && grab_x==grab_x) { //если перетаскивается нода
 		hoverNode.x = x-grab_x
 		hoverNode.y = y-grab_y
-	} else {
-		updateHoverNode(x,y)
+	} else if (!hoverNode && grab_x==grab_x) { //если перетаскивается всё
+		shift_x += x-last_x
+		shift_y += y-last_y
+	} else { //если ничего не перетаскивается
+		updateHoverNode(x-shift_x, y-shift_y)
 		if (!selectedNode) {
 			if (hoverNode) {
 				UI.fillNodeInfo(hoverNode, "preview", UI.isOverNodeInfo(x) ? "left" : "right")
