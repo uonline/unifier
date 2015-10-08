@@ -28,7 +28,9 @@ let edgeByNodesId = {}
 UI.onNodeParamUpdate = function(param, value) {
 	if (!selectedNode) throw new Error('no node is selected') //this must not happen
 	selectedNode.loc[param] = value
-	return value != selectedNode.locOriginal[param]
+	let modified = value != selectedNode.locOriginal[param]
+	if (modified && param == "name") requestRedraw()
+	return modified
 }
 
 control.single({
