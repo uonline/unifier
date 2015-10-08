@@ -16,15 +16,20 @@ UI.resize = function(canvas) {
 	canvas.height = canvas.offsetHeight * s
 }
 
-UI.fillNodeInfo = function(node, mode) {
+UI.fillNodeInfo = function(node, edit_mode, side) {
 	let wrap = $('.node-cfg-wrap')
-	wrap.dataset.mode = mode
+	wrap.dataset.mode = edit_mode
+	wrap.dataset.side = side
 	wrap.$('.node-id').textContent = node.id
 	for (let param of writableLocParams) {
 		let e = wrap.$(`[name="${param}"]`)
 		e.value = node.loc[param]
 		e.classList.toggle('modified', node.loc[param] != node.locOriginal[param])
 	}
+}
+
+UI.isOverNodeInfo = function(x) {
+	return x > canvas.width - $('.node-cfg-wrap').offsetWidth
 }
 
 UI.hideNodeInfo = function() {

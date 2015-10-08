@@ -192,7 +192,7 @@ function move(x,y) {
 		updateHoverNode(x,y)
 		if (!selectedNode) {
 			if (hoverNode) {
-				UI.fillNodeInfo(hoverNode, "preview")
+				UI.fillNodeInfo(hoverNode, "preview", UI.isOverNodeInfo(x) ? "left" : "right")
 			} else {
 				UI.hideNodeInfo()
 			}
@@ -207,7 +207,7 @@ function up() {
 	let it_was_click = (moved_path_len < 5) && (Date.now()-last_press_at < 500)
 	if (it_was_click) {
 		if (pressedNode) { //кликнули в ноду
-			UI.fillNodeInfo(pressedNode, "edit")
+			UI.fillNodeInfo(pressedNode, "edit", UI.isOverNodeInfo(last_x) ? "left" : "right")
 		} else { //кликнули мимо ноды
 			UI.hideNodeInfo()
 			if (selectedNode) updateNodeModifFlag(selectedNode)

@@ -25,14 +25,15 @@ body {
 	position: absolute;
 	display: flex;
 	flex-direction: column;
-	right: 0;
 	top: 0;
 	width: 20%;
 	min-width: 256px;
 	height: 100%;
 	outline: 1px solid #ddd;
 }
-.node-cfg-wrap[data-mode="hidden"] { display: none }
+.node-cfg-wrap[data-side="left"] { left: 0 }
+.node-cfg-wrap[data-side="right"] { right: 0 }
+.node-cfg-wrap[data-mode="hidden"] { visibility: hidden }
 .node-cfg-wrap[data-mode="preview"] {}
 .node-cfg-wrap[data-mode="edit"] {}
 .node-cfg-wrap input {
