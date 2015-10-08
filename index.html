@@ -23,7 +23,7 @@
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
 		<script type="text/javascript">
-			//window.tdd = [{"_deleted":false,"id":123,"name":"Тестини Тестирио","type":"shield","strength_max":111,"coverage":null,"damage":222,"class":null,"kind":null}]
+			//window.tdd = [{"_deleted":false,"id":1,"name":"Тестини Тестирио","type":"shield","strength_max":111,"coverage":25,"damage":222,"class":null,"kind":null},{"_deleted":false,"id":2,"name":"Меч сотоны","type":"weapon-one-handed","strength_max":12,"coverage":null,"damage":111,"class":"normal","kind":"sword"},{"_deleted":false,"id":3,"name":"Левый наплечник чёрного ворона, что вьётся над моею головой","type":"pouldron-left","strength_max":11,"coverage":5,"damage":null,"class":null,"kind":null}]
 			angular
 			.module('unifier', [])
 			.controller('ExampleController', ['$scope', '$window', function($scope, $window) {
@@ -115,8 +115,8 @@
 							</select>
 						</div>
 						<div>Прочность: <input type="number" ng-model="item.strength_max" /></div>
-						<div ng-class="(['weapon-one-handed','weapon-two-handed','shield'].indexOf(item.type) !== -1)?'inactive':''">
-							Покрытие тела: <input type="number" ng-model="item.coverage" />
+						<div ng-class="(['weapon-one-handed','weapon-two-handed'].indexOf(item.type) !== -1)?'inactive':''">
+							Покрытие тела: <input type="number" ng-model="item.coverage" />%
 						</div>
 						<div ng-class="(['weapon-one-handed','weapon-two-handed','shield'].indexOf(item.type) !== -1)?'':'inactive'">
 							Урон при ударе: <input type="number" ng-model="item.damage" />
