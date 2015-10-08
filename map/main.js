@@ -64,6 +64,8 @@ function pointDis(x1,y1, x2,y2) {
 function nodeDis(n1,n2) {
 	return pointDis(n1.x,n1.y, n2.x,n2.y)
 }
+function worldx(x){ return (x - shift_x) / zoom }
+function worldy(y){ return (y - shift_y) / zoom }
 
 
 // Инициализация графа по массиву зон.
@@ -118,6 +120,8 @@ function draw(rc) {
 	rc.save()
 	rc.clearRect(0, 0, rc.canvas.width, rc.canvas.height)
 	rc.translate(shift_x, shift_y)
+	//rc.translate(shift_x + canvas.width/2, shift_y + canvas.height/2)
+	rc.scale(zoom, zoom)
 	
 	for (let node of nodes) {
 		rc.beginPath()
@@ -173,6 +177,8 @@ function updateNodeModifFlag(node) {
 
 // Ищет и запоминает ноду под курсором.
 function updateHoverNode(x,y) {
+	x = worldx(x)
+	y = worldy(y)
 	hoverNode = null
 	for (let node of nodes) {
 		if (pointDis(x, y, node.x, node.y) < NODE_R) {
@@ -185,10 +191,10 @@ function updateHoverNode(x,y) {
 
 // Обработчики мышиного (и трогательного тоже) ввода.
 function singleDown(x, y, is_switching) {
-	updateHoverNode(x-shift_x, y-shift_y)
+	updateHoverNode(x, y)
 	if (hoverNode) { //нажали на ноду
-		grab_x = x-hoverNode.x
-		grab_y = y-hoverNode.y
+		grab_x = worldx(x) - hoverNode.x
+		grab_y = worldy(y) - hoverNode.y
 		pressedNode = hoverNode
 	} else { //нажали мимо ноды
 		grab_x = x
@@ -202,13 +208,13 @@ function singleDown(x, y, is_switching) {
 }
 function singleMove(x, y) {
 	if (hoverNode && grab_x==grab_x) { //если перетаскивается нода
-		hoverNode.x = x-grab_x
-		hoverNode.y = y-grab_y
+		hoverNode.x = worldx(x) - grab_x
+		hoverNode.y = worldy(y) - grab_y
 	} else if (!hoverNode && grab_x==grab_x) { //если перетаскивается всё
 		shift_x += x-last_x
 		shift_y += y-last_y
 	} else { //если ничего не перетаскивается
-		updateHoverNode(x-shift_x, y-shift_y)
+		updateHoverNode(x, y)
 		if (!selectedNode) {
 			if (hoverNode) {
 				UI.fillNodeInfo(hoverNode, "preview", UI.isOverNodeInfo(x) ? "left" : "right")
@@ -239,7 +245,14 @@ function singleUp(is_switching) {
 	return true
 }
 
-function wheelRot(dx, dy, dz){ return true }
+function wheelRot(dx, dy, dz) {
+	let d = Math.pow(2, -dy/200)
+	zoom *= d
+	shift_x += (last_x - shift_x) * (1-d)
+	shift_y += (last_y - shift_y) * (1-d)
+	requestRedraw()
+	return true
+}
 
 // TODO: управление двумя пальцами
 function doubleDown(x1,y1,x2,y2){ return true }
