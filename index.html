@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html ng-app>
+<html ng-app="unifier">
 	<head>
 		<meta charset="utf-8" />
 		<title>Торговец &mdash; uonline/unifier</title>
@@ -22,13 +22,36 @@
 		<!-- angular -->
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
+		<script type="text/javascript">
+			//window.tdd = [{"_deleted":false,"id":123,"name":"Тестини Тестирио","type":"shield","strength_max":111,"coverage":null,"damage":222,"class":null,"kind":null}]
+			angular
+			.module('unifier', [])
+			.controller('ExampleController', ['$scope', '$window', function($scope, $window) {
+				$scope.doAsk = function(oldData) {
+					var x = angular.fromJson($window.prompt('Введите строку для импорта:'));
+					return (x==null ? oldData : x);
+				};
+				$scope.doPasta = function(data) {
+					$window.prompt('', angular.toJson(data));
+				};
+				$scope.makeId = function(data) {
+					var max = 0;
+					for (var i = 0; i < data.length; i++) {
+						if (data[i].id > max) {
+							max = data[i].id;
+						}
+					};
+					return max+1;
+				};
+			}]);
+		</script>
 		<!-- bootstrap -->
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
 		<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 	</head>
-	<body ng-init="items = []">
+	<body ng-init="items = []" ng-controller="ExampleController">
 		<nav class="navbar navbar-default navbar-static-top">
 			<div class="container">
 				<div class="navbar-header">
@@ -51,7 +74,13 @@
 		<div class="container">
 			<div class="row">
 				<div class="col-md-12">
-					<h2 id="title">Item unifier</h2>
+					<div class="page-header">
+					<div class="pull-right">
+						<button class="btn btn-default" ng-click="items = doAsk(items)"><span class="glyphicon glyphicon-folder-open"></span> Импорт</button>
+						<button class="btn btn-default" ng-click="doPasta(items)"><span class="glyphicon glyphicon-save-file"></span> Экспорт</button>
+					</div>
+						<h1>Item unifier</h1>
+					</div>
 					<div class="itemdata" ng-repeat="(index, item) in items" style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px" ng-class="item._deleted?'inactive':''">
 						<div ng-if="!item._deleted" class="pull-right">
 							<button ng-click="item._deleted = true" class="btn btn-default btn-sm">Удалить</button>
@@ -117,8 +146,8 @@
 							</select>
 						</div>
 					</div>
-					<p><button class="btn btn-default" ng-click="items.push({_deleted:false,id:null,name:null,type:null,strength_max:null,coverage:null,damage:null,class:null,kind:null})">Создать ещё</button></p>
-					<textarea style="width: 100%; height: 100px" onfocus="this.select()">{{items | json}}</textarea>
+					<p><button class="btn btn-default" ng-click="items.push({_deleted:false,id:makeId(items),name:null,type:null,strength_max:null,coverage:null,damage:null,class:null,kind:null})"><span class="glyphicon glyphicon-plus"></span> Создать предмет</button></p>
+					<!-- <textarea style="width: 100%; height: 100px" onfocus="this.select()">{{items | json:0}}</textarea> -->
 				</div>
 			</div>
 		</div>
