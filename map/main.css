@@ -33,7 +33,7 @@ body {
 	outline: 1px solid #ddd;
 }
 .node-cfg-wrap[data-mode="hidden"] { display: none }
-.node-cfg-wrap[data-mode="preview"] .submit-btn { display: none }
+.node-cfg-wrap[data-mode="preview"] {}
 .node-cfg-wrap[data-mode="edit"] {}
 .node-cfg-wrap input {
 	width: 100%;
@@ -42,3 +42,4 @@ body {
 	width: 100%;
 	flex-grow: 1;
 }
+.node-cfg-wrap .modified { background: yellow }

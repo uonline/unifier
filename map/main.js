@@ -1,5 +1,16 @@
 "use strict"
 
+let last_x = NaN, last_y = NaN
+let grab_x = NaN, grab_y = NaN
+let moved_path_len = 0
+let last_press_at = 0
+let hoverNode = null
+let pressedNode = null
+let selectedNode = null
+let NODE_R = 5
+let writableLocParams = ['name', 'label', 'description', 'picture']
+
+
 let locById = {}
 let locByLabel = {}
 for (let area of areas)
@@ -10,13 +21,16 @@ for (let area of areas)
 
 let nodes = []
 let nodeById = {}
+let copyLocParams = loc => writableLocParams.reduce((l,p) => (l[p]=loc[p]||'', l), {}) // чтоб никто ничего не понял. даже я
 for (let area of areas)
 	for (let loc of area.locations) {
 		let a = Math.random()*2*Math.PI
 		let r = 192
 		let node = {
 			id: loc.id,
-			loc: loc,
+			loc: copyLocParams(loc),
+			locOriginal: copyLocParams(loc),
+			modified: false,
 			x: r * Math.cos(a) + canvas.width/2,
 			y: r * Math.sin(a) + canvas.height/2,
 			nei: []
@@ -28,9 +42,9 @@ for (let area of areas)
 let edges = []
 let edgeByNodesId = {}
 for (let node of nodes) {
-	for (let label in node.loc.actions) {
+	for (let label in locById[node.id].actions) {
 		let loc = locByLabel[label]
-		if (node.loc.id+","+loc.id in edgeByNodesId) continue
+		if (node.id+","+loc.id in edgeByNodesId) continue
 		let edge = {
 			n1: node,
 			n2: nodeById[loc.id]
@@ -42,15 +56,6 @@ for (let node of nodes) {
 }
 
 
-let last_x = NaN, last_y = NaN
-let grab_x = NaN, grab_y = NaN
-let moved_path_len = 0
-let last_press_at = 0
-let hoverNode = null
-let pressedNode = null
-let selectedNode = null
-let NODE_R = 5
-
 function draw(rc) {
 	rc.save()
 	rc.clearRect(0, 0, rc.canvas.width, rc.canvas.height)
@@ -60,8 +65,12 @@ function draw(rc) {
 		if (hoverNode == node) {
 			rc.fillStyle = 'blue'
 			rc.fill()
-			rc.fillStyle = 'black'
 		}
+		if (node.modified) {
+			rc.fillStyle = 'yellow'
+			rc.fill()
+		}
+		rc.fillStyle = 'black'
 		if (selectedNode == node) {
 			rc.fill()
 		}
@@ -96,19 +105,34 @@ function resize() {
 }
 
 function fillNodeInfo(node, mode) {
-	let elem = $('.node-cfg-wrap')
-	elem.dataset.mode = mode
-	elem.$('[name="name"]').value = node.loc.name
-	elem.$('[name="label"]').value = node.loc.label
-	elem.$('[name="description"]').value = node.loc.description
+	let wrap = $('.node-cfg-wrap')
+	wrap.dataset.mode = mode
+	wrap.$('.node-id').textContent = node.id
+	for (let param of writableLocParams) {
+		let e = wrap.$(`[name="${param}"]`)
+		e.value = node.loc[param]
+		e.classList.toggle('modified', node.loc[param] != node.locOriginal[param])
+	}
 }
 function hideNodeInfo() {
 	$('.node-cfg-wrap').dataset.mode = "hidden"
 }
-$('.node-cfg-wrap .submit-btn').onclick = function() {
-	if (!selectedNode) throw new Error('no node is selected') //this must be impossible
-	let loc = selectedNode.loc
-	$$('.node-cfg-wrap [name]').forEach(e => loc[e.name] = e.value)
+for (let param of writableLocParams) {
+	let elem = $(`.node-cfg-wrap [name="${param}"]`)
+	elem.onchange = elem.onkeyup = function() {
+		if (!selectedNode) throw new Error('no node is selected') //this must not happen
+		selectedNode.loc[param] = elem.value
+		elem.classList.toggle('modified', elem.value != selectedNode.locOriginal[param])
+	}
+}
+
+function updateNodeModifFlag(node) {
+	node.modified = false
+	for (let param of writableLocParams) {
+		if (node.loc[param] == node.locOriginal[param]) continue
+		node.modified = true
+		break
+	}
 }
 
 
@@ -166,12 +190,13 @@ function move(x,y) {
 function up() {
 	let it_was_click = (moved_path_len < 5) && (Date.now()-last_press_at < 500)
 	if (it_was_click) {
-		selectedNode = pressedNode
-		if (selectedNode) {
-			fillNodeInfo(hoverNode, "edit")
+		if (pressedNode) {
+			fillNodeInfo(pressedNode, "edit")
 		} else {
 			hideNodeInfo()
+			if (selectedNode) updateNodeModifFlag(selectedNode)
 		}
+		selectedNode = pressedNode
 	}
 	pressedNode = null
 	grab_x = grab_y = NaN
