@@ -33,12 +33,18 @@ UI.onNodeParamUpdate = function(param, value) {
 	return modified
 }
 
-control.single({
+control.double({
 	startElem: canvas,
 	stopElem: document.body,
-	down: down,
-	move: move,
-	up: up
+	
+	singleDown: singleDown,
+	singleMove: singleMove,
+	singleUp: singleUp,
+	wheelRot: wheelRot,
+	
+	doubleDown: doubleDown,
+	doubleMove: doubleMove,
+	doubleUp: doubleUp
 })
 
 let resize = () => (UI.resize(canvas), requestRedraw())
@@ -178,7 +184,7 @@ function updateHoverNode(x,y) {
 
 
 // Обработчики мышиного (и трогательного тоже) ввода.
-function down(x,y) {
+function singleDown(x, y, is_switching) {
 	updateHoverNode(x-shift_x, y-shift_y)
 	if (hoverNode) { //нажали на ноду
 		grab_x = x-hoverNode.x
@@ -194,7 +200,7 @@ function down(x,y) {
 	requestRedraw()
 	return true
 }
-function move(x,y) {
+function singleMove(x, y) {
 	if (hoverNode && grab_x==grab_x) { //если перетаскивается нода
 		hoverNode.x = x-grab_x
 		hoverNode.y = y-grab_y
@@ -216,7 +222,7 @@ function move(x,y) {
 	requestRedraw()
 	return true
 }
-function up() {
+function singleUp(is_switching) {
 	let it_was_click = (moved_path_len < 5) && (Date.now()-last_press_at < 500)
 	if (it_was_click) {
 		if (pressedNode) { //кликнули в ноду
@@ -232,6 +238,13 @@ function up() {
 	requestRedraw()
 	return true
 }
+
+function wheelRot(dx, dy, dz){ return true }
+
+// TODO: управление двумя пальцами
+function doubleDown(x1,y1,x2,y2){ return true }
+function doubleMove(x1,y1,x2,y2){ return true }
+function doubleUp(){ return true }
 
 // Магия.
 function auto() {
