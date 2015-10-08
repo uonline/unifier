@@ -116,7 +116,7 @@
 						</div>
 						<div>Прочность: <input type="number" ng-model="item.strength_max" /></div>
 						<div ng-class="(['weapon-one-handed','weapon-two-handed'].indexOf(item.type) !== -1)?'inactive':''">
-							Покрытие тела: <input type="number" ng-model="item.coverage" />%
+							Покрытие тела: <input type="number" style="width: 4em" ng-model="item.coverage" />%
 						</div>
 						<div ng-class="(['weapon-one-handed','weapon-two-handed','shield'].indexOf(item.type) !== -1)?'':'inactive'">
 							Урон при ударе: <input type="number" ng-model="item.damage" />
