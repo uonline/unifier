@@ -16,14 +16,14 @@ control.double = function(opts) {
 	
 	function grab(e) {
 		var box = startElem.getBoundingClientRect();
-		singleDown(e.clientX-box.left, e.clientY-box.top, false) && e.preventDefault();
+		singleDown(e.clientX-box.left, e.clientY-box.top, e.button, false) && e.preventDefault();
 	}
 	function move(e) {
 		var box = startElem.getBoundingClientRect();
-		singleMove(e.clientX-box.left, e.clientY-box.top) && e.preventDefault();
+		singleMove(e.clientX-box.left, e.clientY-box.top, e.buttons) && e.preventDefault();
 	}
 	function drop(e) {
-		singleUp(false) && e.preventDefault();
+		singleUp(e.button, false) && e.preventDefault();
 	}
 	
 	
@@ -41,10 +41,10 @@ control.double = function(opts) {
 		var t1 = e.targetTouches[1];
 		
 		if (e.targetTouches.length == 1) {
-			prevent = singleDown(t0.clientX-box.left, t0.clientY-box.top, false);
+			prevent = singleDown(t0.clientX-box.left, t0.clientY-box.top, 0, false);
 		} else {
 			if (touch_numb == 0) console.warn("Received touchstart for TWO new touches!");
-			prevent = singleUp(true);
+			prevent = singleUp(0, true);
 			prevent += doubleDown(
 				t0.clientX-box.left, t0.clientY-box.top,
 				t1.clientX-box.left, t1.clientY-box.top
@@ -67,7 +67,7 @@ control.double = function(opts) {
 		var t1 = e.targetTouches[1];
 		
 		if (e.targetTouches.length == 1) {
-			singleMove(t0.clientX-box.left, t0.clientY-box.top) && e.preventDefault();
+			singleMove(t0.clientX-box.left, t0.clientY-box.top, 1) && e.preventDefault();
 		} else {
 			//мобильная Опера 12.04 передёт тачи сюда в обратном порядке
 			if (t0.identifier > t1.identifier) {var t=t0; t0=t1; t1=t;}
@@ -87,13 +87,13 @@ control.double = function(opts) {
 		if (e.targetTouches.length == 0) {
 			if (touch_numb == 2) { // если подняли оба пальца сразу
 				console.warn("TWO touches ended simultaneously!");
-				(doubleUp() + singleDown(last_touch_x, last_touch_y, true)) && e.preventDefault();
+				(doubleUp() + singleDown(last_touch_x, last_touch_y, 0, true)) && e.preventDefault();
 			}
-			singleUp(false) && e.preventDefault();
+			singleUp(0, false) && e.preventDefault();
 		} else {
 			var box = startElem.getBoundingClientRect();
 			var t = e.targetTouches[0];
-			(doubleUp() + singleDown(t.clientX-box.left, t.clientY-box.top, true)) && e.preventDefault();
+			(doubleUp() + singleDown(t.clientX-box.left, t.clientY-box.top, 0, true)) && e.preventDefault();
 		}
 		
 		touch_numb = e.targetTouches.length;

@@ -7,11 +7,13 @@ let zoom = 1
 
 let last_x = NaN, last_y = NaN
 let grab_x = NaN, grab_y = NaN
-let moved_path_len = 0
-let last_press_at = 0
+//let buttons = 0
+let moved_path_len = [0, 0, 0]
+let last_press_at = [0, 0, 0]
 let hoverNode = null
 let pressedNode = null
 let selectedNode = null
+let firstEdgeNode = null
 let NODE_R = 5
 let writableLocParams = ['name', 'label', 'description', 'picture']
 
@@ -24,6 +26,8 @@ let nodeById = {}
 let edges = []
 let edgeByNodesId = {}
 
+
+canvas.oncontextmenu = function(e){ e.preventDefault() }
 
 UI.onNodeParamUpdate = function(param, value) {
 	if (!selectedNode) throw new Error('no node is selected') //this must not happen
@@ -54,7 +58,7 @@ window.onresize = function() {
 }
 
 window.onresize()
-initGraph(areas)
+setTimeout(initGraph, 1, areas)
 
 
 // Полезности
@@ -66,6 +70,43 @@ function nodeDis(n1,n2) {
 }
 function worldx(x){ return (x - shift_x) / zoom }
 function worldy(y){ return (y - shift_y) / zoom }
+
+
+function Node(x, y, loc) {
+	this.id = loc ? loc.id : Node.randomId()
+	this.loc = Node.copyLocParams(loc || {})
+	this.locOriginal = loc ? Node.copyLocParams(loc) : {}
+	this.modified = false
+	this.x = x
+	this.y = y
+}
+
+Node.randomId = _ => (_=(Math.random()*0xFFFF|0)) in nodeById ? Node.randomId() : _
+console.log(Node.randomId)
+
+Node.copyLocParams = loc => writableLocParams.reduce((l,p) => (l[p]=loc[p]||'', l), {}) // чтоб никто ничего не понял. даже я
+
+Node.add = function(x, y, loc) {
+	let node = new Node(x, y, loc)
+	nodes.push(node)
+	nodeById[node.id] = node
+	return node
+}
+
+
+function Edge(n1, n2) {
+	this.n1 = n1
+	this.n2 = n2
+}
+
+Edge.add = function(n1, n2) {
+	if (n1.id+","+n2.id in edgeByNodesId) return null
+	let edge = new Edge(n1, n2)
+	edges.push(edge)
+	edgeByNodesId[n1.id+","+n2.id] = edge
+	edgeByNodesId[n2.id+","+n1.id] = edge
+	return edge
+}
 
 
 // Инициализация графа по массиву зон.
@@ -80,36 +121,21 @@ function initGraph(areas) {
 		}
 	
 	// Генерим ноды графа
-	let copyLocParams = loc => writableLocParams.reduce((l,p) => (l[p]=loc[p]||'', l), {}) // чтоб никто ничего не понял. даже я
 	for (let area of areas)
 		for (let loc of area.locations) {
 			let a = Math.random()*2*Math.PI
 			let r = 192
-			let node = {
-				id: loc.id,
-				loc: copyLocParams(loc),
-				locOriginal: copyLocParams(loc),
-				modified: false,
-				x: r * Math.cos(a) + canvas.width/2,
-				y: r * Math.sin(a) + canvas.height/2,
-				nei: []
-			}
-			nodes.push(node)
-			nodeById[loc.id] = node
+			let x = r * Math.cos(a) + canvas.width/2
+			let y = r * Math.sin(a) + canvas.height/2
+			Node.add(x, y, loc)
 		}
 	
 	// Генерим рёбра графа
 	for (let node of nodes) {
 		for (let label in locById[node.id].actions) {
 			let loc = locByLabel[label]
-			if (node.id+","+loc.id in edgeByNodesId) continue
-			let edge = {
-				n1: node,
-				n2: nodeById[loc.id]
-			}
-			edges.push(edge)
-			edgeByNodesId[edge.n1.id+","+edge.n2.id] = edge
-			edgeByNodesId[edge.n2.id+","+edge.n1.id] = edge
+			let edge = Edge.add(node, nodeById[loc.id])
+			//if edge==null { эти две ноды уже соединены }
 		}
 	}
 }
@@ -148,6 +174,15 @@ function draw(rc) {
 		rc.lineTo(edge.n2.x, edge.n2.y)
 	}
 	rc.stroke()
+
+	if (firstEdgeNode) {
+		rc.beginPath()
+		rc.moveTo(selectedNode.x, selectedNode.y)
+		rc.lineTo(worldx(last_x), worldy(last_y))
+		rc.strokeStyle = 'green'
+		rc.stroke()
+		rc.strokeStyle = 'black'
+	}
 	
 	rc.restore()
 	if (automator.checked) auto()
@@ -180,7 +215,8 @@ function updateHoverNode(x,y) {
 	x = worldx(x)
 	y = worldy(y)
 	hoverNode = null
-	for (let node of nodes) {
+	for (let i=nodes.length-1; i>=0; i--) {
+		let node = nodes[i]
 		if (pointDis(x, y, node.x, node.y) < NODE_R) {
 			hoverNode = node
 			break
@@ -190,24 +226,32 @@ function updateHoverNode(x,y) {
 
 
 // Обработчики мышиного (и трогательного тоже) ввода.
-function singleDown(x, y, is_switching) {
+function singleDown(x, y, button, is_switching) {
 	updateHoverNode(x, y)
-	if (hoverNode) { //нажали на ноду
-		grab_x = worldx(x) - hoverNode.x
-		grab_y = worldy(y) - hoverNode.y
-		pressedNode = hoverNode
-	} else { //нажали мимо ноды
-		grab_x = x
-		grab_y = y
+	if (button == 0) {
+		if (selectedNode && selectedNode==hoverNode) { // если нажали на уже выбранную ноду
+			// будем добавлять ребро
+			firstEdgeNode = selectedNode
+		} else if (hoverNode) { //нажали на ноду
+			grab_x = worldx(x) - hoverNode.x
+			grab_y = worldy(y) - hoverNode.y
+			pressedNode = hoverNode
+		} else { //нажали мимо ноды
+			grab_x = x
+			grab_y = y
+		}
 	}
-	moved_path_len = 0
-	last_press_at = Date.now()
+	//buttons |= 1<<button
+	moved_path_len[button] = 0
+	last_press_at[button] = Date.now()
 	last_x=x; last_y=y
 	requestRedraw()
 	return true
 }
-function singleMove(x, y) {
-	if (hoverNode && grab_x==grab_x) { //если перетаскивается нода
+function singleMove(x, y, buttons) {
+	if (firstEdgeNode) { //если добавляем ребро
+		updateHoverNode(last_x, last_y)
+	} else if (hoverNode && grab_x==grab_x) { //если перетаскивается нода
 		hoverNode.x = worldx(x) - grab_x
 		hoverNode.y = worldy(y) - grab_y
 	} else if (!hoverNode && grab_x==grab_x) { //если перетаскивается всё
@@ -223,23 +267,35 @@ function singleMove(x, y) {
 			}
 		}
 	}
-	moved_path_len += pointDis(x, y, last_x, last_y)
+	let moved_dis = pointDis(x, y, last_x, last_y)
+	for (let i=0; i<3; i++) if (buttons & (1<<i)) moved_path_len[i] += moved_dis
 	last_x=x; last_y=y
 	requestRedraw()
 	return true
 }
-function singleUp(is_switching) {
-	let it_was_click = (moved_path_len < 5) && (Date.now()-last_press_at < 500)
-	if (it_was_click) {
-		if (pressedNode) { //кликнули в ноду
-			UI.fillNodeInfo(pressedNode, "edit", UI.isOverNodeInfo(last_x) ? "left" : "right")
-		} else { //кликнули мимо ноды
-			UI.hideNodeInfo()
-			if (selectedNode) updateNodeModifFlag(selectedNode)
+function singleUp(button, is_switching) {
+	let it_was_click = (moved_path_len[button] < 5) && (Date.now()-last_press_at[button] < 500)
+	if (button == 0) {
+		if (it_was_click) {
+			if (pressedNode) { //кликнули в ноду
+				UI.fillNodeInfo(pressedNode, "edit", UI.isOverNodeInfo(last_x) ? "left" : "right")
+			} else if (selectedNode) { //кликнули мимо, снимаем выделение
+				UI.hideNodeInfo()
+				updateNodeModifFlag(selectedNode)
+			} else { // кликнули мимо, ничего не выделено
+				Node.add(worldx(last_x), worldy(last_y), null).modified = true
+			}
+			selectedNode = pressedNode
+		} else {
+			if (firstEdgeNode && hoverNode && firstEdgeNode!=hoverNode) {
+				let edge = Edge.add(firstEdgeNode, hoverNode)
+				if (!edge) alert('no')
+			}
 		}
-		selectedNode = pressedNode
+		firstEdgeNode = null
 	}
 	pressedNode = null
+	//buttons &= ~(1<<button)
 	grab_x = grab_y = NaN
 	requestRedraw()
 	return true
