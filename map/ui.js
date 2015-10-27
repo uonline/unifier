@@ -36,3 +36,7 @@ UI.hideNodeInfo = function() {
 	$('.node-cfg-wrap').dataset.mode = "hidden"
 }
 
+UI.nodeInfoIsFocused = function() {
+	return !!$('.node-cfg-wrap *:focus')
+}
+

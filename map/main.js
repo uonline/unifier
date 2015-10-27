@@ -51,6 +51,20 @@ control.double({
 	doubleUp: doubleUp
 })
 
+window.onkeydown = function(e) {
+	switch (e.keyCode) {
+	case 46: //DEL
+		if (!UI.nodeInfoIsFocused() && selectedNode) {
+			e.preventDefault()
+			Node.del(selectedNode)
+			selectedNode = null
+			requestRedraw()
+			UI.hideNodeInfo()
+		}
+		break
+	}
+}
+
 let resize = () => (UI.resize(canvas), requestRedraw())
 window.onresize = function() {
 	resize()
@@ -93,6 +107,17 @@ Node.add = function(x, y, loc) {
 	return node
 }
 
+Node.del = function(node) {
+	let ind = nodes.indexOf(node)
+	if (ind == -1) throw new Error('node #'+node.id+' not in nodes array')
+	nodes.splice(ind, 1)
+	delete nodeById[node.id]
+	for (let i=0; i<edges.length; i++) {
+		let e = edges[i]
+		if (node==e.n1 || node==e.n2) { Edge.del(e); i-- }
+	}
+}
+
 
 function Edge(n1, n2) {
 	this.n1 = n1
@@ -106,6 +131,14 @@ Edge.add = function(n1, n2) {
 	edgeByNodesId[n1.id+","+n2.id] = edge
 	edgeByNodesId[n2.id+","+n1.id] = edge
 	return edge
+}
+
+Edge.del = function(edge) {
+	var ind = edges.indexOf(edge)
+	if (ind == -1) throw new Error('edge ('+edge.n1.id+'-'+edge.n2.id+') not in edges array')
+	edges.splice(ind, 1)
+	delete edgeByNodesId[edge.n1.id+","+edge.n2.id]
+	delete edgeByNodesId[edge.n2.id+","+edge.n1.id]
 }
 
 
@@ -279,13 +312,17 @@ function singleUp(button, is_switching) {
 		if (it_was_click) {
 			if (pressedNode) { //кликнули в ноду
 				UI.fillNodeInfo(pressedNode, "edit", UI.isOverNodeInfo(last_x) ? "left" : "right")
+				selectedNode = pressedNode
 			} else if (selectedNode) { //кликнули мимо, снимаем выделение
 				UI.hideNodeInfo()
 				updateNodeModifFlag(selectedNode)
+				selectedNode = null
 			} else { // кликнули мимо, ничего не выделено
-				Node.add(worldx(last_x), worldy(last_y), null).modified = true
+				let node = Node.add(worldx(last_x), worldy(last_y), null)
+				node.modified = true
+				UI.fillNodeInfo(node, "edit", UI.isOverNodeInfo(last_x) ? "left" : "right")
+				selectedNode = node
 			}
-			selectedNode = pressedNode
 		} else {
 			if (firstEdgeNode && hoverNode && firstEdgeNode!=hoverNode) {
 				let edge = Edge.add(firstEdgeNode, hoverNode)
