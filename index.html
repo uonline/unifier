@@ -145,6 +145,20 @@
 								<option value="hammer">Молот</option>
 							</select>
 						</div>
+						<div ng-class="(['weapon-one-handed','weapon-two-handed','shield'].indexOf(item.type) !== -1)?'inactive':''">
+							Класс брони:
+							<select ng-model="item.armor_class">
+								<option value="cloth">Тряпичная</option>
+								<option value="light leather">Лёгкая кожаная</option>
+								<option value="leather">Кожаная</option>
+								<option value="bone">Костяная</option>
+								<option value="mail">Кольчужная</option>
+								<option value="lamellar">Пластинчатая</option>
+								<option value="light plate">Легкая латная</option>
+								<option value="plate">Латная</option>
+								<option value="heavy plate">Тяжелая латная</option>
+							</select>
+						</div>
 					</div>
 					<p><button class="btn btn-default" ng-click="items.push({_deleted:false,id:makeId(items),name:null,type:null,strength_max:null,coverage:null,damage:null,class:null,kind:null})"><span class="glyphicon glyphicon-plus"></span> Создать предмет</button></p>
 					<!-- <textarea style="width: 100%; height: 100px" onfocus="this.select()">{{items | json:0}}</textarea> -->
