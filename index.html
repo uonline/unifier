@@ -20,8 +20,8 @@
 			window.onbeforeunload = function(){ return 'Are you sure?' }
 		</script>
 		<!-- angular -->
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
 		<script type="text/javascript">
 			//window.tdd = [{"_deleted":false,"id":1,"name":"Тестини Тестирио","type":"shield","strength_max":111,"coverage":25,"damage":222,"class":null,"kind":null},{"_deleted":false,"id":2,"name":"Меч сотоны","type":"weapon-one-handed","strength_max":12,"coverage":null,"damage":111,"class":"normal","kind":"sword"},{"_deleted":false,"id":3,"name":"Левый наплечник чёрного ворона, что вьётся над моею головой","type":"pouldron-left","strength_max":11,"coverage":5,"damage":null,"class":null,"kind":null}]
 			angular
@@ -48,7 +48,7 @@
 		<!-- bootstrap -->
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
-		<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 	</head>
 	<body ng-init="items = []" ng-controller="ExampleController">
@@ -75,10 +75,11 @@
 			<div class="row">
 				<div class="col-md-12">
 					<div class="page-header">
-					<div class="pull-right">
-						<button class="btn btn-default" ng-click="items = doAsk(items)"><span class="glyphicon glyphicon-folder-open"></span> Импорт</button>
-						<button class="btn btn-default" ng-click="doPasta(items)"><span class="glyphicon glyphicon-save-file"></span> Экспорт</button>
-					</div>
+						<div class="pull-right">
+							<textarea id="moonshard" style="width: 1px; height: 1px;" onfocus="this.select()">{{items | json:0}}</textarea>
+							<button class="btn btn-default" ng-click="items = doAsk(items)"><span class="glyphicon glyphicon-folder-open"></span> Импорт</button>
+							<button class="btn btn-default export" data-clipboard-target="#moonshard"><span class="glyphicon glyphicon-save-file"></span> Экспорт</button>
+						</div>
 						<h1>Item unifier</h1>
 					</div>
 					<div class="itemdata" ng-repeat="(index, item) in items" style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px" ng-class="item._deleted?'inactive':''">
@@ -161,9 +162,23 @@
 						</div>
 					</div>
 					<p><button class="btn btn-default" ng-click="items.push({_deleted:false,id:makeId(items),name:null,type:null,strength_max:null,coverage:null,damage:null,class:null,kind:null})"><span class="glyphicon glyphicon-plus"></span> Создать предмет</button></p>
-					<!-- <textarea style="width: 100%; height: 100px" onfocus="this.select()">{{items | json:0}}</textarea> -->
 				</div>
 			</div>
 		</div>
+		<!-- clipboard.js -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.3/clipboard.min.js"></script>
+		<script type="text/javascript">
+			var clipboard = new Clipboard('.export');
+
+			clipboard.on('success', function(e) {
+				alert('Скопировано в буфер обмена.');
+			});
+
+			clipboard.on('error', function(e) {
+				alert('Что-то пошло не так. '+
+					'Попробуйте закрыть это окошко и сразу же нажать Ctrl+C. '+
+					'Если и после этого не скопируется - паникуйте.');
+			});
+		</script>
 	</body>
 </html>
